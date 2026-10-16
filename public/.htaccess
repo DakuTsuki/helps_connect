@@ -1,0 +1,13 @@
+Options -MultiViews
+DirectoryIndex index.html
+RewriteEngine On
+# Leave real files, folders and the PHP API alone
+RewriteCond %{REQUEST_URI} ^/api/ [OR]
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+# Prerendered pages: /about -> /about/index.html
+RewriteCond %{DOCUMENT_ROOT}/$1/index.html -f
+RewriteRule ^(.+?)/?$ $1/index.html [L]
+# Everything else (admin, new articles) -> client-side app shell
+RewriteRule ^ _shell.html [L]

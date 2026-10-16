@@ -1,0 +1,8 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { donationAmounts } from "@/lib/site-data";
+
+export function DonationSection() {
+  const [amount, setAmount] = useState<number | "other">(25);
+  return <section id="donate" className="scroll-mt-28 bg-primary px-6 py-14 text-primary-foreground"><div className="mx-auto max-w-7xl"><p className="text-xs font-bold uppercase">Support the work</p><h2 className="mt-3 font-display text-3xl font-semibold">Support HELPS Counsellors</h2><p className="mt-3 max-w-2xl leading-relaxed">Your support helps us make relationship and family support more accessible.</p><fieldset className="mt-6"><legend className="sr-only">Donation amount</legend><div className="flex flex-wrap gap-3">{donationAmounts.map(value => <Button key={value} variant={amount === value ? "secondary" : "outline"} onClick={() => setAmount(value)} aria-pressed={amount === value}>£{value}</Button>)}<Button variant={amount === "other" ? "secondary" : "outline"} onClick={() => setAmount("other")} aria-pressed={amount === "other"}>Other amount</Button></div>{amount === "other" && <label className="mt-4 block text-sm font-medium">Amount (£)<input type="number" min="1" step="0.01" className="mt-2 block w-40 rounded-md border border-input bg-background px-3 py-2 text-foreground" /></label>}</fieldset><Button disabled variant="secondary" size="lg" className="mt-6">Donate with PayPal</Button><p className="mt-3 text-sm">Official PayPal donation link coming soon.</p></div></section>;
+}
