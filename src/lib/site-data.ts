@@ -371,11 +371,10 @@ export const galleryItems = [
 ];
 
 export const contact = {
-  email: "info@helpscounsellors.org",
+  email: "info@helpscounsellors.com",
   phones: ["+447958424280", "+447403207697"],
   displayPhones: ["+44 7958 424280", "+44 7403 207697"],
   address: "116 Saxonbury Way, Peterborough, PE2 9FB",
 };
-
 export const booking = { durationMinutes: 50, individualFee: 17.50, coupleFee: 25.50 };
 export const donationAmounts = [10, 25, 50] as const;
