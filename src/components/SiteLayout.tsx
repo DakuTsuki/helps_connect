@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Menu, X, ArrowRight } from "lucide-react";
+import { Menu, X, ArrowRight, Facebook } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { contact } from "@/lib/site-data";
@@ -34,7 +34,15 @@ export function SiteLayout({ children }: { children: ReactNode }) {
           <div className="grid gap-8 md:grid-cols-[1.3fr_1fr_1fr]">
             <div><img src={logoAsset} alt="HELPS Counsellors" width={290} height={73} className="h-12 w-auto"/><p className="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">For everyone aspiring to have an enjoyable love life—single, married, widowed, separated or divorced. We operate on Biblical principles without prejudice to religion, race, creed or gender.</p></div>
             <div className="text-sm"><p className="font-semibold">Contact</p><a className="mt-3 block text-muted-foreground hover:text-primary" href={`tel:${contact.phones[0]}`}>{contact.displayPhones[0]}</a><a className="mt-1 block text-muted-foreground hover:text-primary" href={`mailto:${contact.email}`}>{contact.email}</a><p className="mt-1 text-muted-foreground">{contact.address}</p></div>
-            <div className="text-sm"><p className="font-semibold">Follow</p><div className="mt-3 flex flex-col gap-3 text-muted-foreground"><a href="https://www.facebook.com/helpscounsellors" target="_blank" rel="noreferrer">Helpscounsellors Eesuolas</a><a href="https://twitter.com/helpscounsellors" target="_blank" rel="noreferrer">X: @helpscounsellor</a><span>YouTube: Helps Counsellors</span></div><p className="mt-5 text-muted-foreground">Company Limited by Guarantee No. 7373001</p></div>
+            <div className="text-sm">
+              <p className="font-semibold">Follow</p>
+              <div className="mt-3 flex flex-col gap-3 text-muted-foreground">
+                <a href="https://www.facebook.com/helpscounsellors" target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-primary"><Facebook className="size-4" />Helpscounsellors Eesuolas</a>
+                <a href="https://x.com/hcounsellors" target="_blank" rel="noreferrer" className="hover:text-primary">X: @hcounsellors</a>
+                <a href="https://www.youtube.com/@helpscounsellors8180" target="_blank" rel="noreferrer" className="hover:text-primary">YouTube: Helps Counsellors</a>
+              </div>
+              <p className="mt-5 text-muted-foreground">Company Limited by Guarantee No. 7373001</p>
+            </div>
           </div>
           <nav aria-label="Policies" className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm"><Link to="/privacy">Privacy Policy</Link><Link to="/cookies">Cookie Policy</Link><Link to="/complaints">Complaints</Link><Link to="/safeguarding">Safeguarding</Link></nav>
           <p className="mt-8 border-t border-border pt-5 text-xs text-muted-foreground">Registered Charity No. 1140793 · England and Wales · © 2026 HELPS Counsellors</p>
