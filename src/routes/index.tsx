@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { ArrowRight, HeartHandshake, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { posts } from "@/lib/site-data";
-import { brandImages } from "@/lib/site-data";
+import { posts, brandImages } from "@/lib/site-data";
+import { fetchSettings, type SiteSettings } from "@/lib/api";
 import relationshipSupport from "@/assets/support/relationship-support.jpg";
 import familyWellbeing from "@/assets/family-wellbeing-editorial.jpg";
 
@@ -17,12 +18,26 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
+  const [settings, setSettings] = useState<SiteSettings>({
+    hero_eyebrow: "Long-Term Love. Marriage Rejuvenation. Generational Impact.",
+    hero_title: "HELPS Counsellors",
+    hero_description: "HELPS Counsellors is a UK Registered Charity which helps couples build lasting relationships. We support couples in building a marriage that will become stronger, wiser and more meaningful over time; creating enduring foundations of love, stability and wisdom which will be an inspiration to future generations."
+  });
+
+  useEffect(() => {
+    fetchSettings().then(s => setSettings(prev => ({ ...prev, ...s })));
+  }, []);
+
   return <main>
     <section className="mx-auto grid max-w-7xl items-center gap-10 px-6 pb-16 pt-10 lg:grid-cols-[.9fr_1.1fr] lg:py-20">
       <div>
-        <p className="eyebrow">Long-Term Love. Marriage Rejuvenation. Generational Impact.</p>
-        <h1 className="mt-4 max-w-2xl font-display text-5xl font-semibold leading-[1.08] sm:text-7xl">HELPS Counsellors</h1>
-        <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">HELPS Counsellors is a UK Registered Charity which helps couples build lasting relationships. We support couples in building a marriage that will become stronger, wiser and more meaningful over time; creating enduring foundations of love, stability and wisdom which will be an inspiration to future generations.</p>
+        <p className="eyebrow">{settings.hero_eyebrow}</p>
+        <h1 className="mt-4 max-w-2xl font-display text-5xl font-semibold leading-[1.08] sm:text-7xl">
+          {settings.hero_title}
+        </h1>
+        <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+          {settings.hero_description}
+        </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <Button asChild variant="primary" size="lg" className="h-14 px-9 text-base shadow-lg"><Link to="/contact">Book a Session <ArrowRight /></Link></Button>
           <Button asChild variant="outline" size="lg"><Link to="/about">Who we are</Link></Button>
