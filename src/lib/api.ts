@@ -2,7 +2,7 @@
  * All PHP API endpoints live here. Edit API_BASE (or set VITE_API_BASE)
  * to point at your PHP server, e.g. "https://helpscounsellors.org".
  */
-import { posts as fallbackPosts, galleryItems as fallbackGallery } from "@/lib/site-data";
+import { posts as fallbackPosts, galleryItems as fallbackGallery, contact as fallbackContact } from "@/lib/site-data";
 
 export const API_BASE: string = import.meta.env['VITE_API_BASE'] ?? "";
 
@@ -17,6 +17,8 @@ export const ENDPOINTS = {
   gallery: `${API_BASE}/api/gallery.php`,
   saveGallery: `${API_BASE}/api/save-gallery.php`,
   deleteGallery: (id: string | number) => `${API_BASE}/api/save-gallery.php?delete=${encodeURIComponent(String(id))}`,
+  settings: `${API_BASE}/api/settings.php`,
+  saveSettings: `${API_BASE}/api/save-settings.php`,
 };
 
 export type Post = {
@@ -29,9 +31,7 @@ export type Post = {
   readTime?: string;
   status?: "draft" | "published";
   date?: string;
-  /** HTML content from the editor/API */
   content?: string;
-  /** Legacy plain paragraphs (local fallback data) */
   body?: string[];
 };
 
@@ -40,6 +40,16 @@ export type GalleryItem = {
   event: string;
   alt: string;
   image: string;
+};
+
+export type SiteSettings = {
+  hero_eyebrow?: string;
+  hero_title?: string;
+  hero_description?: string;
+  contact_email?: string;
+  contact_phone1?: string;
+  contact_phone2?: string;
+  contact_address?: string;
 };
 
 const AUTH_KEY = "helps_admin_auth";
@@ -63,7 +73,6 @@ function normalize(p: any): Post {
 
 const localPosts = (): Post[] => fallbackPosts.map((p) => ({ ...p, status: "published" as const }));
 
-/** Public: published posts. Falls back to built-in posts if the API is unreachable. */
 export async function fetchPosts(): Promise<Post[]> {
   try {
     const r = await fetch(ENDPOINTS.posts);
@@ -83,7 +92,6 @@ export async function fetchPostBySlug(slug: string): Promise<Post | null> {
   } catch { return localPosts().find((p) => p.slug === slug) ?? null; }
 }
 
-/** Admin calls — no fallback, errors surface to the UI. */
 export async function login(username: string, password: string) {
   const r = await fetch(ENDPOINTS.login, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, password }), credentials: "include" });
   const data = await r.json().catch(() => ({}));
@@ -105,7 +113,6 @@ export async function adminFetchPost(id: string): Promise<Post> {
   return normalize(data.post ?? data);
 }
 
-/** Sends multipart/form-data so the cover image file is included. */
 export async function savePost(form: FormData) {
   const r = await fetch(ENDPOINTS.savePost, { method: "POST", body: form, headers: authHeaders(), credentials: "include" });
   const data = await r.json().catch(() => ({}));
@@ -125,14 +132,12 @@ export async function addAdmin(username: string, password: string) {
   return data;
 }
 
-/** Gallery API calls */
 export async function fetchGallery(): Promise<GalleryItem[]> {
   try {
     const r = await fetch(ENDPOINTS.gallery);
     if (!r.ok) throw new Error();
     const data = await r.json();
     const serverItems: GalleryItem[] = data.items ?? (Array.isArray(data) ? data : []);
-    // Combine server-uploaded images with local fallback assets:
     return [...serverItems, ...fallbackGallery];
   } catch {
     return fallbackGallery;
@@ -149,4 +154,36 @@ export async function saveGalleryItem(form: FormData) {
 export async function deleteGalleryItem(id: string | number) {
   const r = await fetch(ENDPOINTS.deleteGallery(id), { method: "POST", headers: authHeaders(), credentials: "include" });
   if (!r.ok) throw new Error("Could not delete gallery image.");
+}
+
+/** Settings API calls */
+export async function fetchSettings(): Promise<SiteSettings> {
+  try {
+    const r = await fetch(ENDPOINTS.settings);
+    if (!r.ok) throw new Error();
+    const data = await r.json();
+    return data.settings ?? {};
+  } catch {
+    return {
+      hero_eyebrow: "Long-Term Love. Marriage Rejuvenation. Generational Impact.",
+      hero_title: "HELPS Counsellors",
+      hero_description: "HELPS Counsellors is a UK Registered Charity which helps couples build lasting relationships. We support couples in building a marriage that will become stronger, wiser and more meaningful over time; creating enduring foundations of love, stability and wisdom which will be an inspiration to future generations.",
+      contact_email: fallbackContact.email,
+      contact_phone1: fallbackContact.displayPhones[0],
+      contact_phone2: fallbackContact.displayPhones[1],
+      contact_address: fallbackContact.address,
+    };
+  }
+}
+
+export async function saveSettings(settings: SiteSettings) {
+  const r = await fetch(ENDPOINTS.saveSettings, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify(settings),
+    credentials: "include"
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok || data.success === false) throw new Error(data.message || "Could not save settings.");
+  return data;
 }
