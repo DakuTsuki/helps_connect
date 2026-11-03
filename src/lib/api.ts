@@ -2,7 +2,7 @@
  * All PHP API endpoints live here. Edit API_BASE (or set VITE_API_BASE)
  * to point at your PHP server, e.g. "https://helpscounsellors.org".
  */
-import { posts as fallbackPosts } from "@/lib/site-data";
+import { posts as fallbackPosts, galleryItems as fallbackGallery } from "@/lib/site-data";
 
 export const API_BASE: string = import.meta.env['VITE_API_BASE'] ?? "";
 
@@ -14,6 +14,9 @@ export const ENDPOINTS = {
   savePost: `${API_BASE}/api/save-post.php`,
   addAdmin: `${API_BASE}/api/add-admin.php`,
   deletePost: (id: string) => `${API_BASE}/api/delete-post.php?id=${encodeURIComponent(id)}`,
+  gallery: `${API_BASE}/api/gallery.php`,
+  saveGallery: `${API_BASE}/api/save-gallery.php`,
+  deleteGallery: (id: string | number) => `${API_BASE}/api/save-gallery.php?delete=${encodeURIComponent(String(id))}`,
 };
 
 export type Post = {
@@ -30,6 +33,13 @@ export type Post = {
   content?: string;
   /** Legacy plain paragraphs (local fallback data) */
   body?: string[];
+};
+
+export type GalleryItem = {
+  id?: string | number;
+  event: string;
+  alt: string;
+  image: string;
 };
 
 const AUTH_KEY = "helps_admin_auth";
@@ -113,4 +123,30 @@ export async function addAdmin(username: string, password: string) {
   const data = await r.json().catch(() => ({}));
   if (!r.ok || data.success === false) throw new Error(data.message || data.error || "Could not create login.");
   return data;
+}
+
+/** Gallery API calls */
+export async function fetchGallery(): Promise<GalleryItem[]> {
+  try {
+    const r = await fetch(ENDPOINTS.gallery);
+    if (!r.ok) throw new Error();
+    const data = await r.json();
+    const serverItems: GalleryItem[] = data.items ?? (Array.isArray(data) ? data : []);
+    // Combine server-uploaded images with local fallback assets:
+    return [...serverItems, ...fallbackGallery];
+  } catch {
+    return fallbackGallery;
+  }
+}
+
+export async function saveGalleryItem(form: FormData) {
+  const r = await fetch(ENDPOINTS.saveGallery, { method: "POST", body: form, headers: authHeaders(), credentials: "include" });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok || data.success === false) throw new Error(data.message || "Could not upload image.");
+  return data;
+}
+
+export async function deleteGalleryItem(id: string | number) {
+  const r = await fetch(ENDPOINTS.deleteGallery(id), { method: "POST", headers: authHeaders(), credentials: "include" });
+  if (!r.ok) throw new Error("Could not delete gallery image.");
 }
