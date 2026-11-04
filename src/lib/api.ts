@@ -1,6 +1,6 @@
 /**
  * All PHP API endpoints live here. Edit API_BASE (or set VITE_API_BASE)
- * to point at your PHP server, e.g. "https://helpscounsellors.org".
+ * to point at your PHP server, e.g. "https://api.helpscounsellors.com".
  */
 import { posts as fallbackPosts, galleryItems as fallbackGallery, contact as fallbackContact } from "@/lib/site-data";
 
@@ -43,13 +43,33 @@ export type GalleryItem = {
 };
 
 export type SiteSettings = {
+  // Homepage Hero
   hero_eyebrow?: string;
   hero_title?: string;
   hero_description?: string;
+
+  // Homepage Focus
+  focus_rel_title?: string;
+  focus_rel_items?: string;
+  focus_fam_title?: string;
+  focus_fam_items?: string;
+
+  // About Page
+  about_headline?: string;
+  about_p1?: string;
+  about_p2?: string;
+  about_bayo_bio?: string;
+  about_funmi_bio?: string;
+  about_shared_bio?: string;
+  about_partner_text?: string;
+
+  // Contact & Footer
+  contact_intro?: string;
   contact_email?: string;
   contact_phone1?: string;
   contact_phone2?: string;
   contact_address?: string;
+  footer_statement?: string;
 };
 
 const AUTH_KEY = "helps_admin_auth";
@@ -134,7 +154,7 @@ export async function addAdmin(username: string, password: string) {
 
 export async function fetchGallery(): Promise<GalleryItem[]> {
   try {
-    const r = await fetch(ENDPOINTS.gallery);
+    const r = await fetch(ENDPOINTS.gallery, { credentials: "include" });
     if (!r.ok) throw new Error();
     const data = await r.json();
     const serverItems: GalleryItem[] = data.items ?? (Array.isArray(data) ? data : []);
@@ -156,23 +176,40 @@ export async function deleteGalleryItem(id: string | number) {
   if (!r.ok) throw new Error("Could not delete gallery image.");
 }
 
-/** Settings API calls */
+export const defaultSettings: SiteSettings = {
+  hero_eyebrow: "Long-Term Love. Marriage Rejuvenation. Generational Impact.",
+  hero_title: "HELPS Counsellors",
+  hero_description: "HELPS Counsellors is a UK Registered Charity which helps couples build lasting relationships. We support couples in building a marriage that will become stronger, wiser and more meaningful over time; creating enduring foundations of love, stability and wisdom which will be an inspiration to future generations.",
+  
+  focus_rel_title: "Relationship Counselling",
+  focus_rel_items: "Communication difficulties\nConflict\nTrust and intimacy\nMarriage/relationship challenges",
+  focus_fam_title: "Family Wellbeing",
+  focus_fam_items: "Parenting\nFamily relationships\nYoung people\nRelationship education",
+
+  about_headline: "Enjoyable relationships. Stronger families. Healthier communities.",
+  about_p1: "HELPS Counsellors, is for everyone aspiring to have an enjoyable love life whether single, married, widowed, separated or divorced. We welcome all despite being a faith-based Christian charity.",
+  about_p2: "We believe stable family networks create better environments for everyone to grow and reduce criminality among young people. Our programmes explore biblical teachings and culturally sensitive issues to promote family wellbeing, children’s safety and sound mental health, particularly among communities where cultural expectations can strongly influence family and relationship life.",
+  about_bayo_bio: "A licensed Positive Parenting Facilitator with Care for the Family, retired qualified social worker and Mental Health First Aider. Bayo rose to Zonal Pastor in RCCG Oyo1, Nigeria, and led the Marriage and Family Counselling Unit with Funmi; before moving to the UK where they keep the banner flying.",
+  about_funmi_bio: "A Health and Social Care graduate, agricultural engineer, mother, grandmother and mentor.",
+  about_shared_bio: "Funmi and Bayo are ordained pastors under The Redeemed Christian Church of God and pastor RCCG Love Assembly in London.\n\nTheir “Let’s Talk Love” programme has appeared on television, and their books were read and commented on by their mentor, Pastor E.A. Adeboye, the General Overseer of the Redeemed Christian Church of God.\n\nWith over four decades of combined experience in relationship and family support, Bayo and Funmi have worked with individuals, couples and families across different countries, communities, and cultures.",
+  about_partner_text: "Churches, community groups, organisations and individuals can help us extend practical relationship support to more people. Invite a conversation about sponsoring programmes, referring families or volunteering expertise.",
+
+  contact_intro: "Request a helping session appointment. Once you submit your enquiry, a member of the HELPS Counsellors team will contact you to discuss your needs and agree a suitable appointment time.",
+  contact_email: fallbackContact.email,
+  contact_phone1: fallbackContact.displayPhones[0],
+  contact_phone2: fallbackContact.displayPhones[1],
+  contact_address: fallbackContact.address,
+  footer_statement: "For everyone aspiring to have an enjoyable love life—single, married, widowed, separated or divorced. We operate on Biblical principles without prejudice to religion, race, creed or gender.",
+};
+
 export async function fetchSettings(): Promise<SiteSettings> {
   try {
-    const r = await fetch(ENDPOINTS.settings);
+    const r = await fetch(ENDPOINTS.settings, { credentials: "include" });
     if (!r.ok) throw new Error();
     const data = await r.json();
-    return data.settings ?? {};
+    return { ...defaultSettings, ...(data.settings ?? {}) };
   } catch {
-    return {
-      hero_eyebrow: "Long-Term Love. Marriage Rejuvenation. Generational Impact.",
-      hero_title: "HELPS Counsellors",
-      hero_description: "HELPS Counsellors is a UK Registered Charity which helps couples build lasting relationships. We support couples in building a marriage that will become stronger, wiser and more meaningful over time; creating enduring foundations of love, stability and wisdom which will be an inspiration to future generations.",
-      contact_email: fallbackContact.email,
-      contact_phone1: fallbackContact.displayPhones[0],
-      contact_phone2: fallbackContact.displayPhones[1],
-      contact_address: fallbackContact.address,
-    };
+    return defaultSettings;
   }
 }
 
@@ -184,6 +221,6 @@ export async function saveSettings(settings: SiteSettings) {
     credentials: "include"
   });
   const data = await r.json().catch(() => ({}));
-  if (!r.ok || data.success === false) throw new Error(data.message || "Could not save settings.");
+  if (!r.ok || data.success === false) throw new Error(data.message || data.error || "Could not save settings.");
   return data;
 }
