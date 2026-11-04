@@ -1,8 +1,8 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Menu, X, ArrowRight, Facebook } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { contact } from "@/lib/site-data";
+import { fetchSettings, defaultSettings, type SiteSettings } from "@/lib/api";
 import logoAsset from "@/assets/original/helps-logo.png";
 
 const links = [
@@ -12,7 +12,13 @@ const links = [
 
 export function SiteLayout({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+
+  useEffect(() => {
+    fetchSettings().then(setSettings);
+  }, []);
+
   return (
     <div className="min-h-screen bg-scene font-sans text-foreground">
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 px-4 backdrop-blur-md sm:px-6">
@@ -32,8 +38,18 @@ export function SiteLayout({ children }: { children: ReactNode }) {
       <footer className="mt-16 border-t border-border bg-secondary px-4 py-12 print:hidden">
         <div className="mx-auto max-w-7xl">
           <div className="grid gap-8 md:grid-cols-[1.3fr_1fr_1fr]">
-            <div><img src={logoAsset} alt="HELPS Counsellors" width={290} height={73} className="h-12 w-auto"/><p className="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">For everyone aspiring to have an enjoyable love life—single, married, widowed, separated or divorced. We operate on Biblical principles without prejudice to religion, race, creed or gender.</p></div>
-            <div className="text-sm"><p className="font-semibold">Contact</p><a className="mt-3 block text-muted-foreground hover:text-primary" href={`tel:${contact.phones[0]}`}>{contact.displayPhones[0]}</a><a className="mt-1 block text-muted-foreground hover:text-primary" href={`mailto:${contact.email}`}>{contact.email}</a><p className="mt-1 text-muted-foreground">{contact.address}</p></div>
+            <div>
+              <img src={logoAsset} alt="HELPS Counsellors" width={290} height={73} className="h-12 w-auto"/>
+              <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">
+                {settings.footer_statement}
+              </p>
+            </div>
+            <div className="text-sm">
+              <p className="font-semibold">Contact</p>
+              {settings.contact_phone1 && <a className="mt-3 block text-muted-foreground hover:text-primary" href={`tel:${settings.contact_phone1.replace(/\s+/g, '')}`}>{settings.contact_phone1}</a>}
+              {settings.contact_email && <a className="mt-1 block text-muted-foreground hover:text-primary" href={`mailto:${settings.contact_email}`}>{settings.contact_email}</a>}
+              <p className="mt-1 text-muted-foreground">{settings.contact_address}</p>
+            </div>
             <div className="text-sm">
               <p className="font-semibold">Follow</p>
               <div className="mt-3 flex flex-col gap-3 text-muted-foreground">
