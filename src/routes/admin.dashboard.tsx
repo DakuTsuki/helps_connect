@@ -3,7 +3,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { 
   adminFetchPosts, deletePost, 
   fetchGallery, saveGalleryItem, deleteGalleryItem, 
-  fetchSettings, saveSettings,
+  fetchSettings, saveSettings, defaultSettings,
   type Post, type GalleryItem, type SiteSettings 
 } from "@/lib/api";
 import { AdminShell, inputClass } from "@/components/AdminShell";
@@ -17,9 +17,10 @@ export const Route = createFileRoute("/admin/dashboard")({
 
 function Dashboard() {
   const [tab, setTab] = useState<"posts" | "gallery" | "settings">("posts");
+  const [settingsSection, setSettingsSection] = useState<"home" | "about" | "contact">("home");
   const [posts, setPosts] = useState<Post[] | null>(null);
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
-  const [settings, setSettings] = useState<SiteSettings>({});
+  const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -76,13 +77,17 @@ function Dashboard() {
     setLoading(true);
     try {
       await saveSettings(settings);
-      setSuccess("Site content updated successfully!");
+      setSuccess("Site content updated and published successfully!");
     } catch (err) {
       setError((err as Error).message);
     } finally {
       setLoading(false);
     }
   }
+
+  const updateSetting = (key: keyof SiteSettings, value: string) => {
+    setSettings((prev) => ({ ...prev, [key]: value }));
+  };
 
   return (
     <>
@@ -184,86 +189,147 @@ function Dashboard() {
       )}
 
       {tab === "settings" && (
-        <form onSubmit={handleSaveSettings} className="mt-8 max-w-3xl space-y-8 rounded-xl border border-border bg-secondary p-6">
-          <div>
-            <h2 className="font-display text-2xl font-semibold">Homepage Hero Content</h2>
-            <p className="text-sm text-muted-foreground">Update the main tagline and introductory message on the homepage.</p>
-            <div className="mt-4 space-y-4">
-              <div>
-                <label className="block text-xs font-semibold uppercase text-muted-foreground">Eyebrow Tagline</label>
-                <input 
-                  value={settings.hero_eyebrow ?? ""} 
-                  onChange={(e) => setSettings({ ...settings, hero_eyebrow: e.target.value })}
-                  placeholder="Long-Term Love. Marriage Rejuvenation. Generational Impact."
-                  className={inputClass} 
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold uppercase text-muted-foreground">Heading Title</label>
-                <input 
-                  value={settings.hero_title ?? ""} 
-                  onChange={(e) => setSettings({ ...settings, hero_title: e.target.value })}
-                  placeholder="HELPS Counsellors"
-                  className={inputClass} 
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold uppercase text-muted-foreground">Main Description</label>
-                <textarea 
-                  rows={4}
-                  value={settings.hero_description ?? ""} 
-                  onChange={(e) => setSettings({ ...settings, hero_description: e.target.value })}
-                  className={inputClass} 
-                />
-              </div>
-            </div>
+        <div className="mt-8 space-y-6">
+          <div className="flex gap-2">
+            <Button size="sm" variant={settingsSection === "home" ? "ink" : "outline"} onClick={() => setSettingsSection("home")}>Homepage Content</Button>
+            <Button size="sm" variant={settingsSection === "about" ? "ink" : "outline"} onClick={() => setSettingsSection("about")}>About Page & Bios</Button>
+            <Button size="sm" variant={settingsSection === "contact" ? "ink" : "outline"} onClick={() => setSettingsSection("contact")}>Contact & Footer</Button>
           </div>
 
-          <div className="border-t border-border pt-6">
-            <h2 className="font-display text-2xl font-semibold">Contact Information</h2>
-            <p className="text-sm text-muted-foreground">Update contact email and phone numbers across the site.</p>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="block text-xs font-semibold uppercase text-muted-foreground">Contact Email</label>
-                <input 
-                  value={settings.contact_email ?? ""} 
-                  onChange={(e) => setSettings({ ...settings, contact_email: e.target.value })}
-                  className={inputClass} 
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold uppercase text-muted-foreground">Address</label>
-                <input 
-                  value={settings.contact_address ?? ""} 
-                  onChange={(e) => setSettings({ ...settings, contact_address: e.target.value })}
-                  className={inputClass} 
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold uppercase text-muted-foreground">Phone 1</label>
-                <input 
-                  value={settings.contact_phone1 ?? ""} 
-                  onChange={(e) => setSettings({ ...settings, contact_phone1: e.target.value })}
-                  className={inputClass} 
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold uppercase text-muted-foreground">Phone 2</label>
-                <input 
-                  value={settings.contact_phone2 ?? ""} 
-                  onChange={(e) => setSettings({ ...settings, contact_phone2: e.target.value })}
-                  className={inputClass} 
-                />
-              </div>
-            </div>
-          </div>
+          <form onSubmit={handleSaveSettings} className="space-y-6 rounded-xl border border-border bg-secondary p-6">
+            {settingsSection === "home" && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="font-display text-xl font-semibold">Hero Section</h3>
+                  <div className="mt-4 space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold uppercase text-muted-foreground">Eyebrow Tagline</label>
+                      <input value={settings.hero_eyebrow ?? ""} onChange={(e) => updateSetting("hero_eyebrow", e.target.value)} className={inputClass} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold uppercase text-muted-foreground">Hero Heading</label>
+                      <input value={settings.hero_title ?? ""} onChange={(e) => updateSetting("hero_title", e.target.value)} className={inputClass} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold uppercase text-muted-foreground">Hero Description Paragraph</label>
+                      <textarea rows={3} value={settings.hero_description ?? ""} onChange={(e) => updateSetting("hero_description", e.target.value)} className={inputClass} />
+                    </div>
+                  </div>
+                </div>
 
-          <div>
-            <Button type="submit" disabled={loading} size="lg">
-              {loading ? "Saving…" : "Save Site Changes"}
-            </Button>
-          </div>
-        </form>
+                <div className="border-t border-border pt-6">
+                  <h3 className="font-display text-xl font-semibold">"Our Focus" Section</h3>
+                  <div className="mt-4 grid gap-6 sm:grid-cols-2">
+                    <div className="space-y-3">
+                      <label className="block text-xs font-semibold uppercase text-muted-foreground">Card 1 Title</label>
+                      <input value={settings.focus_rel_title ?? ""} onChange={(e) => updateSetting("focus_rel_title", e.target.value)} className={inputClass} />
+                      <label className="block text-xs font-semibold uppercase text-muted-foreground">Card 1 Bullet Points (one per line)</label>
+                      <textarea rows={4} value={settings.focus_rel_items ?? ""} onChange={(e) => updateSetting("focus_rel_items", e.target.value)} className={inputClass} />
+                    </div>
+                    <div className="space-y-3">
+                      <label className="block text-xs font-semibold uppercase text-muted-foreground">Card 2 Title</label>
+                      <input value={settings.focus_fam_title ?? ""} onChange={(e) => updateSetting("focus_fam_title", e.target.value)} className={inputClass} />
+                      <label className="block text-xs font-semibold uppercase text-muted-foreground">Card 2 Bullet Points (one per line)</label>
+                      <textarea rows={4} value={settings.focus_fam_items ?? ""} onChange={(e) => updateSetting("focus_fam_items", e.target.value)} className={inputClass} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {settingsSection === "about" && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="font-display text-xl font-semibold">Mission & Who We Are</h3>
+                  <div className="mt-4 space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold uppercase text-muted-foreground">Headline</label>
+                      <input value={settings.about_headline ?? ""} onChange={(e) => updateSetting("about_headline", e.target.value)} className={inputClass} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold uppercase text-muted-foreground">Paragraph 1</label>
+                      <textarea rows={3} value={settings.about_p1 ?? ""} onChange={(e) => updateSetting("about_p1", e.target.value)} className={inputClass} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold uppercase text-muted-foreground">Paragraph 2</label>
+                      <textarea rows={4} value={settings.about_p2 ?? ""} onChange={(e) => updateSetting("about_p2", e.target.value)} className={inputClass} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-border pt-6">
+                  <h3 className="font-display text-xl font-semibold">Founders' Bios</h3>
+                  <div className="mt-4 space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold uppercase text-muted-foreground">Pastor Bayo Eesuola Bio</label>
+                      <textarea rows={4} value={settings.about_bayo_bio ?? ""} onChange={(e) => updateSetting("about_bayo_bio", e.target.value)} className={inputClass} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold uppercase text-muted-foreground">Pastor Funmi Eesuola Bio</label>
+                      <textarea rows={3} value={settings.about_funmi_bio ?? ""} onChange={(e) => updateSetting("about_funmi_bio", e.target.value)} className={inputClass} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold uppercase text-muted-foreground">Shared Ministry Experience (paragraphs)</label>
+                      <textarea rows={5} value={settings.about_shared_bio ?? ""} onChange={(e) => updateSetting("about_shared_bio", e.target.value)} className={inputClass} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-border pt-6">
+                  <h3 className="font-display text-xl font-semibold">Partner Section</h3>
+                  <div className="mt-4">
+                    <label className="block text-xs font-semibold uppercase text-muted-foreground">Partner Invitation Description</label>
+                    <textarea rows={3} value={settings.about_partner_text ?? ""} onChange={(e) => updateSetting("about_partner_text", e.target.value)} className={inputClass} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {settingsSection === "contact" && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="font-display text-xl font-semibold">Contact Page Content</h3>
+                  <div className="mt-4">
+                    <label className="block text-xs font-semibold uppercase text-muted-foreground">Form Intro Text</label>
+                    <textarea rows={3} value={settings.contact_intro ?? ""} onChange={(e) => updateSetting("contact_intro", e.target.value)} className={inputClass} />
+                  </div>
+                </div>
+
+                <div className="border-t border-border pt-6">
+                  <h3 className="font-display text-xl font-semibold">Organisation Details & Footer</h3>
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="block text-xs font-semibold uppercase text-muted-foreground">Email</label>
+                      <input value={settings.contact_email ?? ""} onChange={(e) => updateSetting("contact_email", e.target.value)} className={inputClass} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold uppercase text-muted-foreground">Address</label>
+                      <input value={settings.contact_address ?? ""} onChange={(e) => updateSetting("contact_address", e.target.value)} className={inputClass} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold uppercase text-muted-foreground">Phone 1</label>
+                      <input value={settings.contact_phone1 ?? ""} onChange={(e) => updateSetting("contact_phone1", e.target.value)} className={inputClass} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold uppercase text-muted-foreground">Phone 2</label>
+                      <input value={settings.contact_phone2 ?? ""} onChange={(e) => updateSetting("contact_phone2", e.target.value)} className={inputClass} />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-semibold uppercase text-muted-foreground">Footer Statement / Charity Mission</label>
+                      <textarea rows={3} value={settings.footer_statement ?? ""} onChange={(e) => updateSetting("footer_statement", e.target.value)} className={inputClass} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="pt-4">
+              <Button type="submit" disabled={loading} size="lg">
+                {loading ? "Saving Changes…" : "Save & Publish All Changes"}
+              </Button>
+            </div>
+          </form>
+        </div>
       )}
     </>
   );
