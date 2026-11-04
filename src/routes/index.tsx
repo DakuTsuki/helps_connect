@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { ArrowRight, HeartHandshake, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { posts, brandImages } from "@/lib/site-data";
-import { fetchSettings, type SiteSettings } from "@/lib/api";
+import { fetchSettings, defaultSettings, type SiteSettings } from "@/lib/api";
 import relationshipSupport from "@/assets/support/relationship-support.jpg";
 import familyWellbeing from "@/assets/family-wellbeing-editorial.jpg";
 
@@ -18,15 +18,14 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
-  const [settings, setSettings] = useState<SiteSettings>({
-    hero_eyebrow: "Long-Term Love. Marriage Rejuvenation. Generational Impact.",
-    hero_title: "HELPS Counsellors",
-    hero_description: "HELPS Counsellors is a UK Registered Charity which helps couples build lasting relationships. We support couples in building a marriage that will become stronger, wiser and more meaningful over time; creating enduring foundations of love, stability and wisdom which will be an inspiration to future generations."
-  });
+  const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
 
   useEffect(() => {
-    fetchSettings().then(s => setSettings(prev => ({ ...prev, ...s })));
+    fetchSettings().then(setSettings);
   }, []);
+
+  const relAreas = (settings.focus_rel_items ?? "").split("\n").filter(Boolean);
+  const famAreas = (settings.focus_fam_items ?? "").split("\n").filter(Boolean);
 
   return <main>
     <section className="mx-auto grid max-w-7xl items-center gap-10 px-6 pb-16 pt-10 lg:grid-cols-[.9fr_1.1fr] lg:py-20">
@@ -48,9 +47,58 @@ function HomePage() {
         <img src={brandImages.founders} alt="Bayo and Funmi Eesuola, founders of HELPS Counsellors" width={899} height={423} className="relative aspect-[4/3] max-h-[650px] w-full rounded-[3rem] object-cover object-left shadow-xl"/>
       </div>
     </section>
-    <section className="border-y border-border bg-secondary py-16"><div className="mx-auto max-w-7xl px-6"><div className="flex items-center gap-5"><h2 className="whitespace-nowrap font-display text-3xl font-semibold sm:text-4xl">Our focus</h2><div className="h-px w-full bg-border"/></div><div className="mt-10 grid gap-12 md:grid-cols-2">
-      {[{icon:HeartHandshake,title:"Relationship Counselling",areas:["Communication difficulties","Conflict","Trust and intimacy","Marriage/relationship challenges"],image:relationshipSupport,alt:"Illustrative stock photograph of a counsellor taking notes during a conversation",width:1125,height:750},{icon:Users,title:"Family Wellbeing",areas:["Parenting","Family relationships","Young people","Relationship education"],image:familyWellbeing,alt:"AI-created illustration of a multigenerational family sharing a conversation at home",width:1200,height:1008}].map((item,index)=><article key={item.title} className="grid content-start gap-6"><img src={item.image} alt={item.alt} width={item.width} height={item.height} loading="lazy" className="aspect-[3/2] w-full rounded-t-[3rem] object-cover"/><div><span className="eyebrow">0{index+1} / Support</span><h3 className="mt-2 font-display text-2xl font-semibold">{item.title}</h3><ul className="mt-3 list-disc space-y-2 pl-5 text-muted-foreground">{item.areas.map(area => <li key={area}>{area}</li>)}</ul><Link to="/contact" className="mt-4 inline-flex items-center gap-2 border-b border-foreground pb-1 text-sm font-semibold">Book a session <ArrowRight className="size-4"/></Link></div></article>)}
-    </div></div></section>
-    <section className="mx-auto max-w-7xl px-6 py-16"><div className="flex items-end justify-between gap-4"><div><p className="eyebrow">Resources</p><h2 className="mt-2 font-display text-3xl font-semibold sm:text-4xl">Relationship insights</h2></div><Link to="/resources" className="shrink-0 border-b border-foreground pb-1 text-sm font-semibold">View all</Link></div><div className="mt-8 divide-y divide-border border-y border-border">{posts.slice(0,3).map(post=><Link key={post.slug} to="/resources/$slug" params={{slug:post.slug}} className="grid gap-3 py-6 transition-colors hover:text-primary md:grid-cols-[160px_1fr_auto] md:items-center"><span className="eyebrow">{post.category}</span><h3 className="font-display text-xl font-semibold leading-snug">{post.title}</h3><p className="text-xs text-muted-foreground">{post.readTime}</p></Link>)}</div></section>
+
+    <section className="border-y border-border bg-secondary py-16">
+      <div className="mx-auto max-w-7xl px-6">
+        <div className="flex items-center gap-5">
+          <h2 className="whitespace-nowrap font-display text-3xl font-semibold sm:text-4xl">Our focus</h2>
+          <div className="h-px w-full bg-border"/>
+        </div>
+        <div className="mt-10 grid gap-12 md:grid-cols-2">
+          <article className="grid content-start gap-6">
+            <img src={relationshipSupport} alt="Illustrative stock photograph of a counsellor" width={1125} height={750} loading="lazy" className="aspect-[3/2] w-full rounded-t-[3rem] object-cover"/>
+            <div>
+              <span className="eyebrow">01 / Support</span>
+              <h3 className="mt-2 font-display text-2xl font-semibold">{settings.focus_rel_title}</h3>
+              <ul className="mt-3 list-disc space-y-2 pl-5 text-muted-foreground">
+                {relAreas.map((area) => <li key={area}>{area}</li>)}
+              </ul>
+              <Link to="/contact" className="mt-4 inline-flex items-center gap-2 border-b border-foreground pb-1 text-sm font-semibold">Book a session <ArrowRight className="size-4"/></Link>
+            </div>
+          </article>
+
+          <article className="grid content-start gap-6">
+            <img src={familyWellbeing} alt="AI-created illustration of a multigenerational family" width={1200} height={1008} loading="lazy" className="aspect-[3/2] w-full rounded-t-[3rem] object-cover"/>
+            <div>
+              <span className="eyebrow">02 / Support</span>
+              <h3 className="mt-2 font-display text-2xl font-semibold">{settings.focus_fam_title}</h3>
+              <ul className="mt-3 list-disc space-y-2 pl-5 text-muted-foreground">
+                {famAreas.map((area) => <li key={area}>{area}</li>)}
+              </ul>
+              <Link to="/contact" className="mt-4 inline-flex items-center gap-2 border-b border-foreground pb-1 text-sm font-semibold">Book a session <ArrowRight className="size-4"/></Link>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section className="mx-auto max-w-7xl px-6 py-16">
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <p className="eyebrow">Resources</p>
+          <h2 className="mt-2 font-display text-3xl font-semibold sm:text-4xl">Relationship insights</h2>
+        </div>
+        <Link to="/resources" className="shrink-0 border-b border-foreground pb-1 text-sm font-semibold">View all</Link>
+      </div>
+      <div className="mt-8 divide-y divide-border border-y border-border">
+        {posts.slice(0, 3).map((post) => (
+          <Link key={post.slug} to="/resources/$slug" params={{ slug: post.slug }} className="grid gap-3 py-6 transition-colors hover:text-primary md:grid-cols-[160px_1fr_auto] md:items-center">
+            <span className="eyebrow">{post.category}</span>
+            <h3 className="font-display text-xl font-semibold leading-snug">{post.title}</h3>
+            <p className="text-xs text-muted-foreground">{post.readTime}</p>
+          </Link>
+        ))}
+      </div>
+    </section>
   </main>;
 }
