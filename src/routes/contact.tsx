@@ -28,7 +28,7 @@ function ContactPage(){
       `Preferred time: ${data.get("time")}`,
       `Message: ${data.get("message")}`
     ].join("\n\n");
-    window.location.href = `mailto:${settings.contact_email}?subject=${encodeURIComponent(`${type} enquiry`)}&body=${encodeURIComponent(body)}`;
+    window.location.href = `mailto:${settings.contact_email || "info@helpscounsellors.com"}?subject=${encodeURIComponent(`${type} enquiry`)}&body=${encodeURIComponent(body)}`;
     setSent(true);
   }
 
@@ -52,10 +52,7 @@ function ContactPage(){
               <legend className="text-sm font-semibold">Enquiry type</legend>
               <div className="mt-2 grid grid-cols-3 gap-2">
                 {["Counselling","Invite Us","Partnership"].map(item => (
-                  <label key={item} className={`cursor-pointer rounded-full border px-3 py-3 text-center text-xs font-semibold sm:text-sm ${type===item?"border-primary bg-primary text-primary-foreground":"border-input bg-background"}`}>
-                    <input type="radio" name="type" value={item} checked={type===item} onChange={()=>setType(item)} className="sr-only"/>
-                    {item}
-                  </label>
+                  <label key={item} className={`cursor-pointer rounded-full border px-3 py-3 text-center text-xs font-semibold sm:text-sm ${type===item?"border-primary bg-primary text-primary-foreground":"border-input bg-background"}`}><input type="radio" name="type" value={item} checked={type===item} onChange={()=>setType(item)} className="sr-only"/>{item}</label>
                 ))}
               </div>
             </fieldset>
@@ -82,8 +79,11 @@ function ContactPage(){
                 <Phone className="size-4 text-primary"/>{phone}
               </a>
             ))}
-            <a href={`mailto:${settings.contact_email}`} className="flex items-center gap-3 py-4 text-sm font-semibold">
-              <Mail className="size-4 text-primary"/>{settings.contact_email}
+            <a href={`mailto:${settings.contact_email || "info@helpscounsellors.com"}`} className="flex items-center gap-3 py-4 text-sm font-semibold">
+              <Mail className="size-4 text-primary"/>{settings.contact_email || "info@helpscounsellors.com"}
+            </a>
+            <a href="mailto:pastorbayo@helpscounsellors.com" className="flex items-center gap-3 py-4 text-sm font-semibold">
+              <Mail className="size-4 text-primary"/>pastorbayo@helpscounsellors.com
             </a>
           </div>
           <p className="mt-5 text-sm leading-relaxed text-muted-foreground">{settings.contact_address}</p>
