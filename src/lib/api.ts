@@ -4,7 +4,7 @@
  */
 import { posts as fallbackPosts, galleryItems as fallbackGallery, contact as fallbackContact } from "@/lib/site-data";
 
-export const API_BASE: string = import.meta.env['VITE_API_BASE'] ?? "";
+export const API_BASE: string = import.meta.env['VITE_API_BASE'] ?? "https://api.helpscounsellors.com";
 
 export const ENDPOINTS = {
   login: `${API_BASE}/api/login.php`,
@@ -157,7 +157,12 @@ export async function fetchGallery(): Promise<GalleryItem[]> {
     const r = await fetch(ENDPOINTS.gallery, { credentials: "include" });
     if (!r.ok) throw new Error();
     const data = await r.json();
-    const serverItems: GalleryItem[] = data.items ?? (Array.isArray(data) ? data : []);
+    const serverItems: GalleryItem[] = (data.items ?? (Array.isArray(data) ? data : [])).map((item: any) => ({
+      ...item,
+      image: item.image?.startsWith("http") 
+        ? item.image 
+        : `${API_BASE}${item.image?.startsWith("/") ? "" : "/"}${item.image}`
+    }));
     return [...serverItems, ...fallbackGallery];
   } catch {
     return fallbackGallery;
