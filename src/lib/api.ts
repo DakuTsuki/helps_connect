@@ -1,8 +1,7 @@
 /**
- * All PHP API endpoints live here. Edit API_BASE (or set VITE_API_BASE)
- * to point at your PHP server, e.g. "https://api.helpscounsellors.com".
+ * All PHP API endpoints live here.
  */
-import { posts as fallbackPosts, galleryItems as fallbackGallery, contact as fallbackContact } from "@/lib/site-data";
+import { posts as fallbackPosts, contact as fallbackContact } from "@/lib/site-data";
 
 export const API_BASE: string = import.meta.env['VITE_API_BASE'] ?? "https://api.helpscounsellors.com";
 
@@ -40,21 +39,18 @@ export type GalleryItem = {
   event: string;
   alt: string;
   image: string;
+  media_type?: "image" | "video";
+  video_url?: string;
 };
 
 export type SiteSettings = {
-  // Homepage Hero
   hero_eyebrow?: string;
   hero_title?: string;
   hero_description?: string;
-
-  // Homepage Focus
   focus_rel_title?: string;
   focus_rel_items?: string;
   focus_fam_title?: string;
   focus_fam_items?: string;
-
-  // About Page
   about_headline?: string;
   about_p1?: string;
   about_p2?: string;
@@ -62,8 +58,6 @@ export type SiteSettings = {
   about_funmi_bio?: string;
   about_shared_bio?: string;
   about_partner_text?: string;
-
-  // Contact & Footer
   contact_intro?: string;
   contact_email?: string;
   contact_phone1?: string;
@@ -157,40 +151,38 @@ export async function fetchGallery(): Promise<GalleryItem[]> {
     const r = await fetch(ENDPOINTS.gallery, { credentials: "include" });
     if (!r.ok) throw new Error();
     const data = await r.json();
-    const serverItems: GalleryItem[] = (data.items ?? (Array.isArray(data) ? data : [])).map((item: any) => ({
+    return (data.items ?? (Array.isArray(data) ? data : [])).map((item: any) => ({
       ...item,
+      media_type: item.media_type || "image",
       image: item.image?.startsWith("http") 
         ? item.image 
         : `${API_BASE}${item.image?.startsWith("/") ? "" : "/"}${item.image}`
     }));
-    return [...serverItems, ...fallbackGallery];
   } catch {
-    return fallbackGallery;
+    return [];
   }
 }
 
 export async function saveGalleryItem(form: FormData) {
   const r = await fetch(ENDPOINTS.saveGallery, { method: "POST", body: form, headers: authHeaders(), credentials: "include" });
   const data = await r.json().catch(() => ({}));
-  if (!r.ok || data.success === false) throw new Error(data.message || "Could not upload image.");
+  if (!r.ok || data.success === false) throw new Error(data.message || data.error || "Could not upload media.");
   return data;
 }
 
 export async function deleteGalleryItem(id: string | number) {
   const r = await fetch(ENDPOINTS.deleteGallery(id), { method: "POST", headers: authHeaders(), credentials: "include" });
-  if (!r.ok) throw new Error("Could not delete gallery image.");
+  if (!r.ok) throw new Error("Could not delete gallery item.");
 }
 
 export const defaultSettings: SiteSettings = {
   hero_eyebrow: "Long-Term Love. Marriage Rejuvenation. Generational Impact.",
   hero_title: "HELPS Counsellors",
   hero_description: "HELPS Counsellors is a UK Registered Charity which helps couples build lasting relationships. We support couples in building a marriage that will become stronger, wiser and more meaningful over time; creating enduring foundations of love, stability and wisdom which will be an inspiration to future generations.",
-  
   focus_rel_title: "Relationship Counselling",
   focus_rel_items: "Communication difficulties\nConflict\nTrust and intimacy\nMarriage/relationship challenges",
   focus_fam_title: "Family Wellbeing",
   focus_fam_items: "Parenting\nFamily relationships\nYoung people\nRelationship education",
-
   about_headline: "Enjoyable relationships. Stronger families. Healthier communities.",
   about_p1: "HELPS Counsellors, is for everyone aspiring to have an enjoyable love life whether single, married, widowed, separated or divorced. We welcome all despite being a faith-based Christian charity.",
   about_p2: "We believe stable family networks create better environments for everyone to grow and reduce criminality among young people. Our programmes explore biblical teachings and culturally sensitive issues to promote family wellbeing, children’s safety and sound mental health, particularly among communities where cultural expectations can strongly influence family and relationship life.",
@@ -198,7 +190,6 @@ export const defaultSettings: SiteSettings = {
   about_funmi_bio: "A Health and Social Care graduate, agricultural engineer, mother, grandmother and mentor.",
   about_shared_bio: "Funmi and Bayo are ordained pastors under The Redeemed Christian Church of God and pastor RCCG Love Assembly in London.\n\nTheir “Let’s Talk Love” programme has appeared on television, and their books were read and commented on by their mentor, Pastor E.A. Adeboye, the General Overseer of the Redeemed Christian Church of God.\n\nWith over four decades of combined experience in relationship and family support, Bayo and Funmi have worked with individuals, couples and families across different countries, communities, and cultures.",
   about_partner_text: "Churches, community groups, organisations and individuals can help us extend practical relationship support to more people. Invite a conversation about sponsoring programmes, referring families or volunteering expertise.",
-
   contact_intro: "Request a helping session appointment. Once you submit your enquiry, a member of the HELPS Counsellors team will contact you to discuss your needs and agree a suitable appointment time.",
   contact_email: fallbackContact.email,
   contact_phone1: fallbackContact.displayPhones[0],
