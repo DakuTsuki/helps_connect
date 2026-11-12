@@ -24,6 +24,7 @@ function Dashboard() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mediaType, setMediaType] = useState<"image" | "video">("image");
 
   const loadPosts = () => adminFetchPosts().then(setPosts).catch((e) => { setError(e.message); setPosts([]); });
   const loadGallery = () => fetchGallery().then(setGallery).catch(() => {});
@@ -48,7 +49,8 @@ function Dashboard() {
     try {
       await saveGalleryItem(form);
       (e.target as HTMLFormElement).reset();
-      setSuccess("Gallery photo uploaded successfully!");
+      setMediaType("image");
+      setSuccess("Media added to gallery successfully!");
       loadGallery();
     } catch (err) {
       setError((err as Error).message);
@@ -57,12 +59,9 @@ function Dashboard() {
     }
   }
 
-  async function removeGalleryPhoto(item: GalleryItem) {
-    if (!item.id) {
-      alert("This is a built-in static image and cannot be deleted via the admin.");
-      return;
-    }
-    if (!confirm(`Delete image for "${item.event}"?`)) return;
+  async function removeGalleryMedia(item: GalleryItem) {
+    if (!item.id) return;
+    if (!confirm(`Are you sure you want to delete this ${item.media_type === "video" ? "video" : "picture"} (${item.event})?`)) return;
     try {
       await deleteGalleryItem(item.id);
       loadGallery();
@@ -77,7 +76,7 @@ function Dashboard() {
     setLoading(true);
     try {
       await saveSettings(settings);
-      setSuccess("Site content updated and published successfully!");
+      setSuccess("Site content updated successfully!");
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -104,7 +103,7 @@ function Dashboard() {
 
       <div className="mt-6 flex flex-wrap gap-3 border-b border-border pb-3">
         <Button variant={tab === "posts" ? "ink" : "outline"} onClick={() => { setTab("posts"); setError(""); setSuccess(""); }}>Posts & Articles</Button>
-        <Button variant={tab === "gallery" ? "ink" : "outline"} onClick={() => { setTab("gallery"); setError(""); setSuccess(""); }}>Gallery Images</Button>
+        <Button variant={tab === "gallery" ? "ink" : "outline"} onClick={() => { setTab("gallery"); setError(""); setSuccess(""); }}>Gallery (Photos & Videos)</Button>
         <Button variant={tab === "settings" ? "ink" : "outline"} onClick={() => { setTab("settings"); setError(""); setSuccess(""); }}>Site Content (Wordings)</Button>
       </div>
 
@@ -145,38 +144,73 @@ function Dashboard() {
       {tab === "gallery" && (
         <div className="mt-8 space-y-10">
           <section className="rounded-xl border border-border bg-secondary p-6">
-            <h2 className="font-display text-xl font-semibold">Upload New Gallery Photo</h2>
-            <form onSubmit={handleGalleryUpload} className="mt-4 grid gap-4 sm:grid-cols-3">
+            <h2 className="font-display text-xl font-semibold">Upload Photo or Video to Gallery</h2>
+            <form onSubmit={handleGalleryUpload} className="mt-4 grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="block text-xs font-semibold uppercase text-muted-foreground">Event / Tag</label>
-                <input required name="event" placeholder="e.g. Cleave 2026, Seminar" className={inputClass} />
+                <label className="block text-xs font-semibold uppercase text-muted-foreground">Media Type</label>
+                <select name="media_type" value={mediaType} onChange={(e) => setMediaType(e.target.value as "image" | "video")} className={inputClass}>
+                  <option value="image">Photo</option>
+                  <option value="video">Video Clip</option>
+                </select>
               </div>
+
               <div>
-                <label className="block text-xs font-semibold uppercase text-muted-foreground">Description (Alt)</label>
-                <input name="alt" placeholder="e.g. Guests at the event" className={inputClass} />
+                <label className="block text-xs font-semibold uppercase text-muted-foreground">Event / Category Tag</label>
+                <input required name="event" placeholder="e.g. Cleave 2026, Seminar, Highlights" className={inputClass} />
               </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold uppercase text-muted-foreground">Title / Caption</label>
+                <input name="alt" placeholder="e.g. Cleave Conference Highlights" className={inputClass} />
+              </div>
+
               <div>
-                <label className="block text-xs font-semibold uppercase text-muted-foreground">Image file</label>
-                <input required type="file" name="image" accept="image/*" className="mt-1 block w-full text-xs" />
+                <label className="block text-xs font-semibold uppercase text-muted-foreground">{mediaType === "video" ? "Thumbnail Image (optional)" : "Photo File *"}</label>
+                <input type="file" name="image" accept="image/*" required={mediaType === "image"} className="mt-1 block w-full text-xs" />
               </div>
-              <div className="sm:col-span-3">
+
+              {mediaType === "video" && (
+                <div className="sm:col-span-2 space-y-3 rounded-lg border border-border bg-background p-4">
+                  <h4 className="text-sm font-semibold">Video Source</h4>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase text-muted-foreground">YouTube Link (Recommended)</label>
+                    <input name="video_url" placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..." className={inputClass} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase text-muted-foreground">OR Upload Video File (MP4, WebM)</label>
+                    <input type="file" name="video_file" accept="video/mp4,video/webm,video/quicktime" className="mt-1 block w-full text-xs" />
+                  </div>
+                </div>
+              )}
+
+              <div className="sm:col-span-2 pt-2">
                 <Button type="submit" disabled={loading}>
-                  {loading ? "Uploading…" : "Upload to Gallery"}
+                  {loading ? "Adding to Gallery…" : `Add ${mediaType === "video" ? "Video" : "Photo"} to Gallery`}
                 </Button>
               </div>
             </form>
           </section>
 
           <section>
-            <h2 className="font-display text-xl font-semibold">Current Gallery Photos ({gallery.length})</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-xl font-semibold">All Gallery Media ({gallery.length})</h2>
+              <p className="text-xs text-muted-foreground">Click "Delete" on any photo or video to remove it immediately.</p>
+            </div>
             <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4 md:grid-cols-6">
               {gallery.map((item, idx) => (
-                <div key={item.id ?? idx} className="group relative overflow-hidden rounded-lg border border-border bg-secondary">
-                  <img src={item.image} alt={item.alt} className="aspect-square w-full object-cover" />
+                <div key={item.id ?? idx} className="group relative overflow-hidden rounded-lg border border-border bg-secondary flex flex-col justify-between">
+                  <div className="relative aspect-square w-full bg-black/10">
+                    <img src={item.image} alt={item.alt} className="h-full w-full object-cover" />
+                    {item.media_type === "video" && (
+                      <span className="absolute top-2 right-2 rounded bg-black/80 px-1.5 py-0.5 text-[10px] font-bold text-white uppercase">
+                        Video
+                      </span>
+                    )}
+                  </div>
                   <div className="p-2">
                     <p className="truncate text-xs font-medium">{item.event}</p>
                     {item.id && (
-                      <button type="button" onClick={() => removeGalleryPhoto(item)} className="mt-1 text-xs text-destructive hover:underline">
+                      <button type="button" onClick={() => removeGalleryMedia(item)} className="mt-1 text-xs text-destructive hover:underline font-semibold block">
                         Delete
                       </button>
                     )}
