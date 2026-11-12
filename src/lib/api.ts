@@ -64,6 +64,7 @@ export type SiteSettings = {
   contact_phone2?: string;
   contact_address?: string;
   footer_statement?: string;
+  hidden_gallery_ids?: string;
 };
 
 const AUTH_KEY = "helps_admin_auth";
@@ -145,12 +146,21 @@ export async function addAdmin(username: string, password: string) {
   if (!r.ok || data.success === false) throw new Error(data.message || data.error || "Could not create login.");
   return data;
 }
+
 export async function fetchGallery(): Promise<GalleryItem[]> {
   try {
-    const r = await fetch(ENDPOINTS.gallery, { credentials: "include" });
-    if (!r.ok) throw new Error();
-    const data = await r.json();
-    const serverItems: GalleryItem[] = (data.items ?? (Array.isArray(data) ? data : [])).map((item: any) => ({
+    // 1. Fetch DB items and current hidden list from settings
+    const [galleryRes, settingsRes] = await Promise.all([
+      fetch(ENDPOINTS.gallery, { credentials: "include" }).then(r => r.ok ? r.json() : { items: [] }),
+      fetch(ENDPOINTS.settings, { credentials: "include" }).then(r => r.ok ? r.json() : { settings: {} })
+    ]);
+
+    const hiddenIds: string[] = (settingsRes.settings?.hidden_gallery_ids || "")
+      .split(",")
+      .map((s: string) => s.trim())
+      .filter(Boolean);
+
+    const serverItems: GalleryItem[] = (galleryRes.items ?? []).map((item: any) => ({
       ...item,
       media_type: item.media_type || "image",
       image: item.image?.startsWith("http") 
@@ -158,10 +168,17 @@ export async function fetchGallery(): Promise<GalleryItem[]> {
         : `${API_BASE}${item.image?.startsWith("/") ? "" : "/"}${item.image}`
     }));
 
-    // Combine database items (new uploads) with built-in original photos
-    return [...serverItems, ...fallbackGallery];
+    // Tag local built-in fallback items with static IDs (static-0, static-1, etc.)
+    const taggedFallbacks: GalleryItem[] = fallbackGallery.map((item, idx) => ({
+      ...item,
+      id: `static-${idx}`,
+      media_type: "image"
+    }));
+
+    // Combine and filter out any items that Pastor Bayo deleted
+    return [...serverItems, ...taggedFallbacks].filter(item => !hiddenIds.includes(String(item.id)));
   } catch {
-    return fallbackGallery;
+    return fallbackGallery.map((item, idx) => ({ ...item, id: `static-${idx}`, media_type: "image" }));
   }
 }
 
@@ -173,8 +190,27 @@ export async function saveGalleryItem(form: FormData) {
 }
 
 export async function deleteGalleryItem(id: string | number) {
+  // If it's an old built-in photo (static-X), save its ID to hidden_gallery_ids in settings
+  if (String(id).startsWith("static-")) {
+    const settings = await fetchSettings();
+    const currentHidden = (settings as any).hidden_gallery_ids 
+      ? (settings as any).hidden_gallery_ids.split(",").map((s: string) => s.trim()).filter(Boolean)
+      : [];
+    
+    if (!currentHidden.includes(String(id))) {
+      currentHidden.push(String(id));
+      await saveSettings({
+        ...settings,
+        hidden_gallery_ids: currentHidden.join(",")
+      } as any);
+    }
+    return { success: true };
+  }
+
+  // If it's a newly uploaded DB item, delete it via the delete endpoint
   const r = await fetch(ENDPOINTS.deleteGallery(id), { method: "POST", headers: authHeaders(), credentials: "include" });
   if (!r.ok) throw new Error("Could not delete gallery item.");
+  return { success: true };
 }
 
 export const defaultSettings: SiteSettings = {
