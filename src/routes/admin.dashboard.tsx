@@ -27,7 +27,14 @@ function Dashboard() {
   const [mediaType, setMediaType] = useState<"image" | "video">("image");
 
   const loadPosts = () => adminFetchPosts().then(setPosts).catch((e) => { setError(e.message); setPosts([]); });
-  const loadGallery = () => fetchGallery().then(setGallery).catch(() => {});
+  
+  const loadGallery = () => {
+    fetchGallery().then((items) => {
+      const hidden = (localStorage.getItem("hidden_gallery_ids") || "").split(",").filter(Boolean);
+      setGallery(items.filter((item) => !hidden.includes(String(item.id))));
+    }).catch(() => {});
+  };
+
   const loadSettings = () => fetchSettings().then(setSettings).catch(() => {});
 
   useEffect(() => { 
@@ -62,9 +69,30 @@ function Dashboard() {
   async function removeGalleryMedia(item: GalleryItem) {
     if (!item.id) return;
     if (!confirm(`Are you sure you want to delete this ${item.media_type === "video" ? "video" : "picture"} (${item.event})?`)) return;
+
+    // 1. If it's an old built-in photo (static-X), delete/hide it directly:
+    if (String(item.id).startsWith("static-")) {
+      try {
+        const hidden = localStorage.getItem("hidden_gallery_ids") || "";
+        const list = hidden.split(",").filter(Boolean);
+        if (!list.includes(String(item.id))) {
+          list.push(String(item.id));
+          localStorage.setItem("hidden_gallery_ids", list.join(","));
+          saveSettings({ ...settings, hidden_gallery_ids: list.join(",") } as any).catch(() => {});
+        }
+        setGallery((prev) => prev.filter((p) => String(p.id) !== String(item.id)));
+        setSuccess("Picture removed successfully!");
+      } catch (err) {
+        setError("Could not remove picture.");
+      }
+      return;
+    }
+
+    // 2. If it's a database-uploaded photo or video:
     try {
       await deleteGalleryItem(item.id);
-      loadGallery();
+      setGallery((prev) => prev.filter((p) => String(p.id) !== String(item.id)));
+      setSuccess("Item deleted successfully!");
     } catch (err) {
       setError((err as Error).message);
     }
