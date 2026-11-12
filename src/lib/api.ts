@@ -149,7 +149,6 @@ export async function addAdmin(username: string, password: string) {
 
 export async function fetchGallery(): Promise<GalleryItem[]> {
   try {
-    // 1. Fetch DB items and current hidden list from settings
     const [galleryRes, settingsRes] = await Promise.all([
       fetch(ENDPOINTS.gallery, { credentials: "include" }).then(r => r.ok ? r.json() : { items: [] }),
       fetch(ENDPOINTS.settings, { credentials: "include" }).then(r => r.ok ? r.json() : { settings: {} })
@@ -168,14 +167,12 @@ export async function fetchGallery(): Promise<GalleryItem[]> {
         : `${API_BASE}${item.image?.startsWith("/") ? "" : "/"}${item.image}`
     }));
 
-    // Tag local built-in fallback items with static IDs (static-0, static-1, etc.)
     const taggedFallbacks: GalleryItem[] = fallbackGallery.map((item, idx) => ({
       ...item,
       id: `static-${idx}`,
       media_type: "image"
     }));
 
-    // Combine and filter out any items that Pastor Bayo deleted
     return [...serverItems, ...taggedFallbacks].filter(item => !hiddenIds.includes(String(item.id)));
   } catch {
     return fallbackGallery.map((item, idx) => ({ ...item, id: `static-${idx}`, media_type: "image" }));
@@ -190,7 +187,7 @@ export async function saveGalleryItem(form: FormData) {
 }
 
 export async function deleteGalleryItem(id: string | number) {
-  // If it's an old built-in photo (static-X), save its ID to hidden_gallery_ids in settings
+  // If it's an old built-in photo (static-X), save it to hidden_gallery_ids in settings:
   if (String(id).startsWith("static-")) {
     const settings = await fetchSettings();
     const currentHidden = (settings as any).hidden_gallery_ids 
@@ -207,10 +204,23 @@ export async function deleteGalleryItem(id: string | number) {
     return { success: true };
   }
 
-  // If it's a newly uploaded DB item, delete it via the delete endpoint
-  const r = await fetch(ENDPOINTS.deleteGallery(id), { method: "POST", headers: authHeaders(), credentials: "include" });
-  if (!r.ok) throw new Error("Could not delete gallery item.");
-  return { success: true };
+  // If it's a real database ID, send a POST with an explicit action=delete form:
+  const form = new FormData();
+  form.append("action", "delete");
+  form.append("id", String(id));
+
+  const r = await fetch(ENDPOINTS.saveGallery + "?delete=" + encodeURIComponent(String(id)), {
+    method: "POST",
+    body: form,
+    headers: authHeaders(),
+    credentials: "include"
+  });
+  
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok || data.success === false) {
+    throw new Error(data.error || data.message || "Could not delete gallery item.");
+  }
+  return data;
 }
 
 export const defaultSettings: SiteSettings = {
