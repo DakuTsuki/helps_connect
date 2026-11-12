@@ -1,7 +1,7 @@
 /**
  * All PHP API endpoints live here.
  */
-import { posts as fallbackPosts, contact as fallbackContact } from "@/lib/site-data";
+import { posts as fallbackPosts, galleryItems as fallbackGallery, contact as fallbackContact } from "@/lib/site-data";
 
 export const API_BASE: string = import.meta.env['VITE_API_BASE'] ?? "https://api.helpscounsellors.com";
 
@@ -145,21 +145,23 @@ export async function addAdmin(username: string, password: string) {
   if (!r.ok || data.success === false) throw new Error(data.message || data.error || "Could not create login.");
   return data;
 }
-
 export async function fetchGallery(): Promise<GalleryItem[]> {
   try {
     const r = await fetch(ENDPOINTS.gallery, { credentials: "include" });
     if (!r.ok) throw new Error();
     const data = await r.json();
-    return (data.items ?? (Array.isArray(data) ? data : [])).map((item: any) => ({
+    const serverItems: GalleryItem[] = (data.items ?? (Array.isArray(data) ? data : [])).map((item: any) => ({
       ...item,
       media_type: item.media_type || "image",
       image: item.image?.startsWith("http") 
         ? item.image 
         : `${API_BASE}${item.image?.startsWith("/") ? "" : "/"}${item.image}`
     }));
+
+    // Combine database items (new uploads) with built-in original photos
+    return [...serverItems, ...fallbackGallery];
   } catch {
-    return [];
+    return fallbackGallery;
   }
 }
 
