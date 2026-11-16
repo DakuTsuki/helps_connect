@@ -219,7 +219,7 @@ function Dashboard() {
 
                   <div className="border-t border-border pt-3">
                     <label className="block text-xs font-semibold uppercase text-muted-foreground">
-                      OR Upload Small Video File (MP4, Max 8MB)
+                      OR Upload Video File (MP4, Max 256MB)
                     </label>
                     <input type="file" name="video_file" accept="video/mp4,video/webm" className="mt-1 block w-full text-xs" />
                   </div>
