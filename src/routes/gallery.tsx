@@ -67,21 +67,31 @@ function GalleryPage() {
 
       {/* Media Grid */}
       <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5">
-        {visible.map((item, index) => (
-          <button key={`${item.event}-${item.id ?? index}`} type="button" onClick={() => setSelected(item)} className="group relative aspect-[4/3] overflow-hidden text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl bg-secondary">
-            <img src={item.image} alt={item.alt || item.event} width={1024} height={768} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
-            {item.media_type === "video" && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
-                <div className="rounded-full bg-primary p-3 text-primary-foreground shadow-lg">
-                  <Play className="size-6 fill-current" />
+        {visible.map((item, index) => {
+          const isDirectVideo = item.media_type === "video" && item.video_url && !item.video_url.includes("youtube") && !item.video_url.includes("youtu.be");
+
+          return (
+            <button key={`${item.event}-${item.id ?? index}`} type="button" onClick={() => setSelected(item)} className="group relative aspect-[4/3] overflow-hidden text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl bg-secondary">
+              {isDirectVideo && (!item.image || item.image.includes("unsplash")) ? (
+                // Automatically display the 1st frame of the uploaded MP4 as the cover!
+                <video src={`${item.video_url}#t=0.5`} preload="metadata" className="h-full w-full object-cover pointer-events-none" />
+              ) : (
+                <img src={item.image} alt={item.alt || item.event} width={1024} height={768} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
+              )}
+
+              {item.media_type === "video" && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/25 group-hover:bg-black/35 transition-colors">
+                  <div className="rounded-full bg-primary/90 p-3 text-primary-foreground shadow-lg backdrop-blur-sm group-hover:scale-110 transition-transform">
+                    <Play className="size-6 fill-current" />
+                  </div>
                 </div>
-              </div>
-            )}
-            <span className="absolute bottom-0 left-0 bg-background/90 backdrop-blur-sm px-3 py-1.5 text-xs font-semibold rounded-tr-lg">
-              {item.event}
-            </span>
-          </button>
-        ))}
+              )}
+              <span className="absolute bottom-0 left-0 bg-background/90 backdrop-blur-sm px-3 py-1.5 text-xs font-semibold rounded-tr-lg">
+                {item.event}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Lightbox / Video Modal */}
